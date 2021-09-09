@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
 
@@ -112,12 +112,21 @@ services:
         volumes:
             - zammad-data:/opt/zammad
 
+    caddy:
+        image: caddy:latest
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - caddy-data:/data
+          - $PWD/Caddyfile:/etc/caddy/Caddyfile
+          - $PWD/site:/srv
+          - caddy-config:/config
+
 volumes:
     elasticsearch-data:
-        driver: local
     postgresql-data:
-        driver: local
     zammad-backup:
-        driver: local
     zammad-data:
-        driver: local
+    caddy-data:
+    caddy-config:
