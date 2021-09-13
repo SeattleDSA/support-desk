@@ -12,6 +12,8 @@ services:
             - HOLD_DAYS=10
             - POSTGRESQL_USER=${POSTGRES_USER}
             - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad-postgresql${VERSION}
         links:
             - zammad-postgresql
@@ -23,6 +25,8 @@ services:
     zammad-elasticsearch:
         environment:
             - discovery.type=single-node
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad-elasticsearch${VERSION}
         restart: ${RESTART}
         volumes:
@@ -35,6 +39,8 @@ services:
         environment:
             - POSTGRESQL_USER=${POSTGRES_USER}
             - POSTGRESQL_PASS=${POSTGRES_PASS}
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad${VERSION}
         links:
             - zammad-elasticsearch
@@ -45,11 +51,19 @@ services:
 
     zammad-memcached:
         command: memcached -m 256M
+        networks:
+            - zammad
         image: memcached:1.6.9-alpine
         restart: ${RESTART}
 
     zammad-nginx:
         command: ["zammad-nginx"]
+        environment:
+            - RAILS_TRUSTED_PROXIES=['127.0.0.1', '::1', 'caddy']
+            - NGINX_SERVER_SCHEME=https
+        networks:
+            - caddy
+            - zammad
         expose:
             - "8080"
         depends_on:
@@ -66,6 +80,8 @@ services:
         environment:
             - POSTGRES_USER=${POSTGRES_USER}
             - POSTGRES_PASSWORD=${POSTGRES_PASS}
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad-postgresql${VERSION}
         restart: ${RESTART}
         volumes:
@@ -76,6 +92,8 @@ services:
         depends_on:
             - zammad-memcached
             - zammad-postgresql
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad${VERSION}
         links:
             - zammad-elasticsearch
@@ -90,6 +108,8 @@ services:
         depends_on:
             - zammad-memcached
             - zammad-railsserver
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad${VERSION}
         links:
             - zammad-elasticsearch
@@ -104,6 +124,8 @@ services:
         depends_on:
             - zammad-memcached
             - zammad-railsserver
+        networks:
+            - zammad
         image: ${IMAGE_REPO}:zammad${VERSION}
         links:
             - zammad-postgresql
@@ -115,13 +137,20 @@ services:
     caddy:
         image: caddy:latest
         ports:
-          - "80:80"
-          - "443:443"
+            - "80:80"
+            - "443:443"
+        networks:
+            - caddy
+            - zammad
         volumes:
-          - caddy-data:/data
-          - $PWD/Caddyfile:/etc/caddy/Caddyfile
-          - $PWD/site:/srv
-          - caddy-config:/config
+            - caddy-data:/data
+            - $PWD/Caddyfile:/etc/caddy/Caddyfile
+            - $PWD/site:/srv
+            - caddy-config:/config
+
+networks:
+    caddy:
+    zammad:
 
 volumes:
     elasticsearch-data:
